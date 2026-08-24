@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>월간 고정지출 대시보드</title>
+  <link rel="manifest" href="manifest.json">
+  <!-- Chart.js 및 % 표시 플러그인 추가 -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+  <style>
+    :root { --bg: #f8fafc; --card: #ffffff; --primary: #2563eb; --text: #1e293b; }
+    body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 16px; }
+    .container { max-width: 500px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+    .card { background: var(--card); border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    h2 { margin: 0 0 12px 0; font-size: 1.1rem; color: #64748b; display: flex; justify-content: space-between; align-items: center; }
+    .summary-box { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+    .stat { display: flex; flex-direction: column; }
+    .stat .label { font-size: 0.85rem; color: #64748b; }
+    .stat .value { font-size: 1.25rem; font-weight: bold; margin-top: 4px; }
+    .remaining { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 12px; text-align: center; margin-bottom: 8px; }
+    .remaining .value { font-size: 1.5rem; font-weight: bold; color: var(--primary); }
+    .daily-budget { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 10px; text-align: center; font-size: 0.9rem; color: #166534; }
+    .daily-budget b { font-size: 1.1rem; color: #15803d; }
+    
+    .input-group { display: flex; gap: 6px; margin-bottom: 8px; flex-wrap: wrap; }
+    input, select { padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem; }
+    input[type="text"] { flex: 2; min-width: 100px; }
+    input[type="number"] { width: 80px; text-align: right; }
+    .input-day { width: 50px !important; text-align: center; }
+    select { background: white; }
+    
+    button { background: var(--primary); color: white; border: none; border-radius: 6px; padding: 8px 12px; cursor: pointer; font-weight: bold; }
+    .item-list { list-style: none; padding: 0; margin: 0; }
+    .item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #f1f5f9; gap: 8px; }
+    .item.paid .item-name { text-decoration: line-through; color: #94a3b8; }
+    .item-left { display: flex; align-items: center; gap: 8px; flex: 1; }
+    .item-info { display: flex; flex-direction: column; }
+    .item-day { display: inline-block; background: #e2e8f0; color: #475569; font-size: 0.75rem; font-weight: bold; padding: 1px 5px; border-radius: 4px; }
+    .item-cat { font-size: 0.75rem; color: #64748b; margin-left: 4px; }
+    .item-edit { display: flex; gap: 4px; flex: 1; flex-wrap: wrap; }
+    
+    .btn-edit { background: #64748b; padding: 4px 8px; font-size: 0.8rem; }
+    .btn-del { background: #ef4444; padding: 4px 8px; font-size: 0.8rem; }
+    .btn-save { background: #10b981; padding: 4px 8px; font-size: 0.8rem; }
+    .btn-reset { background: #f59e0b; font-size: 0.8rem; padding: 4px 8px; }
+    .btn-backup { background: #475569; width: 100%; margin-top: 6px; }
+    .btn-restore { background: #0284c7; width: 100%; margin-top: 6px; }
+    .backup-group { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    
+    input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- 수입 및 잔액 요약 -->
+    <div class="card">
+      <h2>월 수입 설정</h2>
+      <div class="input-group">
+        <input type="number" id="incomeInput" placeholder="월 수입 입력" style="flex:1;">
+        <button onclick="saveIncome()">저장</button>
+      </div>
+      <div class="summary-box" style="margin-top:16px;">
+        <div class="stat"><span class="label">총 수입</span><span class="value" id="dispIncome">0원</span></div>
+        <div class="stat"><span class="label">남은 고정지출</span><span class="value" id="dispExpense" style="color:#ef4444;">0원</span></div>
+      </div>
+      <div class="remaining">
+        <div class="label">지출 차감 후 잔액</div>
+        <div class="value" id="dispRemain">0원</div>
+      </div>
+      <div class="daily-budget" id="dispDaily">
+        오늘 기준 하루 권장 생활비: <b>0원</b>
+      </div>
+    </div>
+
+    <!-- 카테고리별 지출 비율 차트 -->
+    <div class="card">
+      <h2>카테고리별 지출 구성</h2>
+      <canvas id="expenseChart" height="220"></canvas>
+    </div>
+
+    <!-- 고정 지출 항목 관리 -->
+    <div class="card">
+      <h2>
+        고정지출 항목 관리
+        <button class="btn-reset" onclick="resetPaidStatus()">체크 전체해제</button>
+      </h2>
+      <div class="input-group">
+        <input type="number" id="itemDay" class="input-day" placeholder="일" min="1" max="31">
+        <select id="itemCat">
+          <option value="금융/카드">금융/카드</option>
+          <option value="교육/육아">교육/육아</option>
+          <option value="공과금/통신">공과금/통신</option>
+          <option value="주거/구독">주거/구독</option>
+          <option value="기타">기타</option>
+        </select>
+        <input type="text" id="itemName" placeholder="항목명">
+        <input type="number" id="itemAmount" placeholder="금액">
+        <button onclick="addExpenseItem()">추가</button>
+      </div>
+      <ul class="item-list" id="itemList"></ul>
+    </div>
+
+    <!-- 데이터 백업 / 복원 -->
+    <div class="card">
+      <h2>데이터 백업 및 복원</h2>
+      <div class="backup-group">
+        <button class="btn-backup" onclick="exportData()">백업 다운로드</button>
+        <button class="btn-restore" onclick="document.getElementById('fileInput').click()">백업 불러오기</button>
+      </div>
+      <input type="file" id="fileInput" accept=".json" style="display: none;" onchange="importData(event)">
+    </div>
+  </div>
+
+  <script>
+    let data = JSON.parse(localStorage.getItem('monthly_budget_db')) || { income: 0, lastMonth: '', items: [] };
+    let editingId = null;
+    let chart = null;
+
+    function checkMonthReset() {
+      const currentMonth = new Date().toISOString().slice(0, 7);
+      if (data.lastMonth !== currentMonth) {
+        data.lastMonth = currentMonth;
+        data.items.forEach(item => item.paid = false);
+        save();
+      }
+    }
+
+    function save() {
+      data.items.sort((a, b) => (a.day || 0) - (b.day || 0));
+      localStorage.setItem('monthly_budget_db', JSON.stringify(data));
+      render();
+    }
+
+    function saveIncome() {
+      const val = Number(document.getElementById('incomeInput').value);
+      if (!isNaN(val)) { data.income = val; save(); }
+    }
+
+    function addExpenseItem() {
+      const day = Number(document.getElementById('itemDay').value) || 1;
+      const cat = document.getElementById('itemCat').value;
+      const name = document.getElementById('itemName').value.trim();
+      const amount = Number(document.getElementById('itemAmount').value);
+
+      if (name && amount > 0) {
+        data.items.push({ id: Date.now(), day, category: cat, name, amount, paid: false });
+        document.getElementById('itemDay').value = '';
+        document.getElementById('itemName').value = '';
+        document.getElementById('itemAmount').value = '';
+        save();
+      }
+    }
+
+    function togglePaid(id) {
+      const item = data.items.find(i => i.id === id);
+      if (item) {
+        item.paid = !item.paid;
+        save();
+      }
+    }
+
+    function resetPaidStatus() {
+      if (confirm('모든 항목의 납부 완료 체크를 해제하시겠습니까?')) {
+        data.items.forEach(i => i.paid = false);
+        save();
+      }
+    }
+
+    function enableEdit(id) {
+      editingId = id;
+      render();
+    }
+
+    function saveEdit(id) {
+      const day = Number(document.getElementById(`edit-day-${id}`).value) || 1;
+      const cat = document.getElementById(`edit-cat-${id}`).value;
+      const name = document.getElementById(`edit-name-${id}`).value.trim();
+      const amount = Number(document.getElementById(`edit-amount-${id}`).value);
+
+      if (name && amount > 0) {
+        const item = data.items.find(i => i.id === id);
+        if (item) {
+          item.day = day;
+          item.category = cat;
+          item.name = name;
+          item.amount = amount;
+        }
+        editingId = null;
+        save();
+      }
+    }
+
+    function removeItem(id) {
+      data.items = data.items.filter(item => item.id !== id);
+      if (editingId === id) editingId = null;
+      save();
+    }
+
+    function exportData() {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data, null, 2));
+      const downloadAnchor = document.createElement('a');
+      const today = new Date().toISOString().slice(0, 10);
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `budget_backup_${today}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+    }
+
+    function importData(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const importedData = JSON.parse(e.target.result);
+          if (typeof importedData.income === 'number' && Array.isArray(importedData.items)) {
+            data = importedData;
+            save();
+            alert('성공적으로 데이터를 복원했습니다.');
+          } else {
+            alert('올바르지 않은 데이터 형식입니다.');
+          }
+        } catch (err) {
+          alert('파일을 읽는 중 오류가 발생했습니다.');
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function render() {
+      const totalExpense = data.items.reduce((acc, cur) => acc + cur.amount, 0);
+      const pendingExpense = data.items.filter(i => !i.paid).reduce((acc, cur) => acc + cur.amount, 0);
+      const remaining = data.income - totalExpense;
+
+      const now = new Date();
+      const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+      const daysLeft = Math.max(1, lastDayOfMonth - now.getDate() + 1);
+      const dailyBudget = Math.max(0, Math.floor((data.income - pendingExpense) / daysLeft));
+
+      document.getElementById('dispIncome').innerText = data.income.toLocaleString() + '원';
+      document.getElementById('dispExpense').innerText = pendingExpense.toLocaleString() + '원 (미납)';
+      document.getElementById('dispRemain').innerText = remaining.toLocaleString() + '원';
+      document.getElementById('dispDaily').innerHTML = `이번 달 남은 <b>${daysLeft}일</b> 동안 하루 권장 생활비: <b>${dailyBudget.toLocaleString()}원</b>`;
+
+      const listEl = document.getElementById('itemList');
+      listEl.innerHTML = data.items.map(item => {
+        if (editingId === item.id) {
+          return `
+            <li class="item">
+              <div class="item-edit">
+                <input type="number" id="edit-day-${item.id}" class="input-day" value="${item.day || 1}" min="1" max="31">
+                <select id="edit-cat-${item.id}">
+                  <option value="금융/카드" ${item.category==='금융/카드'?'selected':''}>금융/카드</option>
+                  <option value="교육/육아" ${item.category==='교육/육아'?'selected':''}>교육/육아</option>
+                  <option value="공과금/통신" ${item.category==='공과금/통신'?'selected':''}>공과금/통신</option>
+                  <option value="주거/구독" ${item.category==='주거/구독'?'selected':''}>주거/구독</option>
+                  <option value="기타" ${item.category==='기타'?'selected':''}>기타</option>
+                </select>
+                <input type="text" id="edit-name-${item.id}" value="${item.name}">
+                <input type="number" id="edit-amount-${item.id}" value="${item.amount}">
+                <button class="btn-save" onclick="saveEdit(${item.id})">완료</button>
+              </div>
+            </li>
+          `;
+        }
+        return `
+          <li class="item ${item.paid ? 'paid' : ''}">
+            <div class="item-left">
+              <input type="checkbox" ${item.paid ? 'checked' : ''} onchange="togglePaid(${item.id})">
+              <div class="item-info">
+                <div>
+                  <span class="item-day">${item.day || 1}일</span>
+                  <span class="item-name">${item.name}</span>
+                  <span class="item-cat">[${item.category || '기타'}]</span>
+                </div>
+              </div>
+            </div>
+            <div>
+              <b>${item.amount.toLocaleString()}원</b>
+              <button class="btn-edit" onclick="enableEdit(${item.id})">수정</button>
+              <button class="btn-del" onclick="removeItem(${item.id})">삭제</button>
+            </div>
+          </li>
+        `;
+      }).join('');
+
+      updateCategoryChart(remaining);
+    }
+
+    // 카테고리별 합산 차트 생성
+    function updateCategoryChart(remaining) {
+      const ctx = document.getElementById('expenseChart').getContext('2d');
+      
+      // 카테고리별 금액 집계
+      const categoryTotals = {};
+      data.items.forEach(item => {
+        const cat = item.category || '기타';
+        categoryTotals[cat] = (categoryTotals[cat] || 0) + item.amount;
+      });
+
+      const labels = [];
+      const chartData = [];
+      const colors = [];
+
+      // 카테고리 색상 매핑
+      const colorMap = {
+        '금융/카드': '#ef4444',
+        '교육/육아': '#f59e0b',
+        '공과금/통신': '#10b981',
+        '주거/구독': '#6366f1',
+        '기타': '#8b5cf6',
+        '가용 잔액': '#3b82f6'
+      };
+
+      for (const [cat, sum] of Object.entries(categoryTotals)) {
+        if (sum > 0) {
+          labels.push(cat);
+          chartData.push(sum);
+          colors.push(colorMap[cat] || '#64748b');
+        }
+      }
+
+      if (remaining > 0) {
+        labels.push('가용 잔액');
+        chartData.push(remaining);
+        colors.push(colorMap['가용 잔액']);
+      }
+
+      const totalVal = chartData.reduce((a, b) => a + b, 0);
+
+      if (chart) chart.destroy();
+      
+      // datalabels 플러그인 등록
+      Chart.register(ChartDataLabels);
+
+      chart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: labels,
+          datasets: [{
+            data: chartData,
+            backgroundColor: colors
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: {
+                generateLabels: function(chart) {
+                  const data = chart.data;
+                  return data.labels.map((label, i) => {
+                    const value = data.datasets[0].data[i];
+                    const pct = totalVal > 0 ? ((value / totalVal) * 100).toFixed(1) : 0;
+                    return {
+                      text: `${label}: ${value.toLocaleString()}원 (${pct}%)`,
+                      fillStyle: data.datasets[0].backgroundColor[i],
+                      hidden: isNaN(data.datasets[0].data[i]) || chart.getDatasetMeta(0).data[i].hidden,
+                      index: i
+                    };
+                  });
+                }
+              }
+            },
+            datalabels: {
+              color: '#ffffff',
+              font: { weight: 'bold', size: 11 },
+              formatter: (value) => {
+                if (totalVal === 0) return '';
+                const pct = (value / totalVal * 100).toFixed(1);
+                return pct >= 4 ? `${pct}%` : ''; // 4% 이상일 때만 그래프 내부에 표시
+              }
+            }
+          }
+        }
+      });
+    }
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js').catch(() => {});
+    }
+
+    checkMonthReset();
+    render();
+  </script>
+</body>
+</html>
