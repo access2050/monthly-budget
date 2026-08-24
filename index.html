@@ -1,60 +1,1615 @@
-/* 글로벌 스크롤 및 너비 강제 고정 (크롬 화면 밀림 방지) */
-html, body {
-  width: 100% !important;
-  max-width: 100% !important;
-  overflow-x: hidden !important;
-  margin: 0;
-  padding: 12px;
-  box-sizing: border-box;
-}
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no, maximum-scale=1.0, user-scalable=no">
 
-/* 그리드 기반 리스트 레이아웃 (브레이브 줄바꿈 방지) */
-.expense-item {
-  display: grid !important;
-  /* [체크박스] [날짜] [이름/카테고리(자동확장)] [금액] [버튼2개] */
-  grid-template-columns: 20px auto 1fr auto auto;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 0;
-  border-bottom: 1px solid #e2e8f0;
-  width: 100% !important;
-  box-sizing: border-box;
-}
+  <meta name="color-scheme" content="light only">
+  <meta name="supported-color-schemes" content="light">
+  <meta name="theme-color" content="#ffffff">
 
-.item-info {
-  min-width: 0 !important; /* Grid 환경에서 text-overflow 작동 필수 조건 */
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
+  <title>월간 고정지출 대시보드</title>
 
-.item-name {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: #0f172a;
-  white-space: nowrap !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important; /* 길어지면 ... 처리 */
-  display: block;
-}
+  <link rel="manifest" href="manifest.json">
 
-.item-cat {
-  font-size: 0.7rem;
-  color: #64748b;
-  white-space: nowrap !important;
-}
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
 
-.item-amount {
-  font-size: 0.8rem;
-  font-weight: bold;
-  color: #0f172a;
-  white-space: nowrap !important;
-  text-align: right;
-  padding-right: 2px;
-}
+  <style>
+    :root {
+      color-scheme: light only !important;
+      forced-color-adjust: none !important;
+    }
 
-.btn-group {
-  display: flex;
-  gap: 2px;
-  flex-shrink: 0;
-}
+    html {
+      background-color: #f8fafc !important;
+      color: #0f172a !important;
+      filter: none !important;
+      -webkit-filter: none !important;
+      width: 100% !important;
+      overflow-x: hidden !important;
+    }
+
+    * {
+      box-sizing: border-box !important;
+      -webkit-tap-highlight-color: transparent;
+      color-scheme: light only !important;
+    }
+
+    body {
+      background-color: #f8fafc !important;
+      color: #0f172a !important;
+      margin: 0;
+      padding: 12px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      overflow-x: hidden !important;
+      width: 100% !important;
+    }
+
+    .container {
+      width: 100% !important;
+      max-width: 480px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .card {
+      background-color: #ffffff !important;
+      color: #0f172a !important;
+      border-radius: 12px;
+      padding: 14px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      border: 1px solid #e2e8f0 !important;
+      width: 100% !important;
+      box-sizing: border-box !important;
+    }
+
+    .card-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      gap: 8px;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 1rem;
+      color: #475569 !important;
+    }
+
+    .summary-box {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .stat {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .stat .label {
+      font-size: 0.8rem;
+      color: #64748b !important;
+    }
+
+    .stat .value {
+      font-size: 1.1rem;
+      font-weight: bold;
+      margin-top: 2px;
+      color: #0f172a !important;
+    }
+
+    .remaining {
+      background-color: #eff6ff !important;
+      border: 1px solid #bfdbfe !important;
+      border-radius: 8px;
+      padding: 10px;
+      text-align: center;
+      margin-bottom: 8px;
+    }
+
+    .remaining .value {
+      font-size: 1.3rem;
+      font-weight: bold;
+      color: #2563eb !important;
+    }
+
+    .daily-budget {
+      background-color: #f0fdf4 !important;
+      border: 1px solid #bbf7d0 !important;
+      border-radius: 8px;
+      padding: 10px;
+      text-align: center;
+      font-size: 0.8rem;
+      color: #166534 !important;
+    }
+
+    .daily-budget b {
+      font-size: 0.95rem;
+      color: #15803d !important;
+    }
+
+    .input-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 12px;
+      width: 100% !important;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 6px;
+      width: 100% !important;
+      min-width: 0 !important;
+    }
+
+    input,
+    select {
+      min-width: 0 !important;
+      padding: 8px 8px;
+      border: 1px solid #cbd5e1 !important;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      background-color: #ffffff !important;
+      color: #0f172a !important;
+    }
+
+    button {
+      background-color: #2563eb !important;
+      color: #ffffff !important;
+      border: none;
+      border-radius: 6px;
+      padding: 8px 10px;
+      cursor: pointer;
+      font-weight: bold;
+      white-space: nowrap !important;
+      flex-shrink: 0 !important;
+    }
+
+    /* =====================================================
+       고정지출 목록
+       ===================================================== */
+
+    .expense-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 8px;
+      width: 100% !important;
+    }
+
+    .expense-item {
+      display: flex;
+      align-items: center;
+      width: 100% !important;
+      padding: 8px 0;
+      border-bottom: 1px solid #e2e8f0 !important;
+      gap: 6px;
+      white-space: nowrap !important;
+      overflow: hidden !important;
+      min-width: 0 !important;
+    }
+
+    .expense-item.paid {
+      color: #94a3b8 !important;
+    }
+
+    .expense-item.paid .item-name {
+      text-decoration: line-through;
+      color: #94a3b8 !important;
+    }
+
+    /* 왼쪽 영역 */
+    .item-left {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+
+      /*
+       * 핵심 수정
+       * 오른쪽 버튼 영역을 제외한 나머지 공간을 사용
+       */
+      flex: 1 1 0 !important;
+      min-width: 0 !important;
+
+      overflow: hidden !important;
+    }
+
+    /* 체크박스 */
+    .item-left input[type="checkbox"] {
+      width: 16px !important;
+      min-width: 16px !important;
+      max-width: 16px !important;
+      height: 16px !important;
+
+      flex: 0 0 16px !important;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* 날짜 */
+    .item-day {
+      background-color: #e2e8f0 !important;
+      color: #334155 !important;
+      font-size: 0.7rem;
+      font-weight: bold;
+      padding: 2px 4px;
+      border-radius: 4px;
+
+      /*
+       * 날짜는 절대로 줄어들지 않음
+       */
+      flex: 0 0 auto !important;
+      white-space: nowrap !important;
+    }
+
+    /* 항목명 + 카테고리 */
+    .item-info {
+      display: flex;
+      flex-direction: column;
+
+      /*
+       * 핵심
+       * flex 영역 안에서 실제로 줄어들 수 있게 함
+       */
+      flex: 1 1 0 !important;
+      min-width: 0 !important;
+      width: 0;
+
+      overflow: hidden !important;
+    }
+
+    .item-name {
+      display: block;
+      width: 100%;
+
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #0f172a !important;
+
+      white-space: nowrap !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+    }
+
+    .item-cat {
+      display: block;
+      width: 100%;
+
+      font-size: 0.7rem;
+      color: #64748b !important;
+
+      /*
+       * 카테고리도 한 줄 유지
+       */
+      white-space: nowrap !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+    }
+
+    /* 오른쪽 영역 */
+    .item-right {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+
+      /*
+       * 금액 + 수정 + 삭제 버튼은 절대로 줄어들지 않음
+       */
+      flex: 0 0 auto !important;
+      white-space: nowrap !important;
+      min-width: max-content !important;
+    }
+
+    /* 금액 */
+    .item-amount {
+      font-size: 0.78rem;
+      font-weight: bold;
+      color: #0f172a !important;
+
+      white-space: nowrap !important;
+      flex: 0 0 auto !important;
+    }
+
+    /* 수정 버튼 */
+    .btn-edit {
+      background-color: #64748b !important;
+      color: #ffffff !important;
+      padding: 4px 4px !important;
+      font-size: 0.68rem !important;
+      border-radius: 4px;
+
+      white-space: nowrap !important;
+      flex: 0 0 auto !important;
+    }
+
+    /* 삭제 버튼 */
+    .btn-del {
+      background-color: #ef4444 !important;
+      color: #ffffff !important;
+      padding: 4px 4px !important;
+      font-size: 0.68rem !important;
+      border-radius: 4px;
+
+      white-space: nowrap !important;
+      flex: 0 0 auto !important;
+    }
+
+    /* 저장 버튼 */
+    .btn-save {
+      background-color: #10b981 !important;
+      color: #ffffff !important;
+      padding: 6px 8px;
+      font-size: 0.75rem;
+      border-radius: 4px;
+    }
+
+    /* 전체 체크 해제 */
+    .btn-reset {
+      background-color: #f59e0b !important;
+      color: #ffffff !important;
+      font-size: 0.75rem;
+      padding: 4px 8px;
+      border-radius: 4px;
+    }
+
+    /* 백업 */
+    .backup-group {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .btn-backup {
+      background-color: #475569 !important;
+      width: 100%;
+    }
+
+    .btn-restore {
+      background-color: #0284c7 !important;
+      width: 100%;
+    }
+
+    /* 체크박스 */
+    input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      cursor: pointer;
+      flex-shrink: 0 !important;
+    }
+
+    /* 차트 */
+    .chart-container {
+      position: relative;
+      width: 100%;
+      max-width: 300px;
+      margin: 0 auto;
+    }
+
+    /* =====================================================
+       아주 좁은 휴대폰 화면 대응
+       ===================================================== */
+
+    @media (max-width: 360px) {
+
+      .card {
+        padding: 12px;
+      }
+
+      .expense-item {
+        gap: 4px;
+      }
+
+      .item-left {
+        gap: 3px;
+      }
+
+      .item-day {
+        font-size: 0.65rem;
+        padding: 2px 3px;
+      }
+
+      .item-name {
+        font-size: 0.8rem;
+      }
+
+      .item-cat {
+        font-size: 0.65rem;
+      }
+
+      .item-amount {
+        font-size: 0.72rem;
+      }
+
+      .btn-edit,
+      .btn-del {
+        padding: 4px 3px !important;
+        font-size: 0.62rem !important;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="container">
+
+    <!-- =====================================================
+         수입 및 잔액 요약
+         ===================================================== -->
+
+    <div class="card">
+
+      <div class="card-title">
+        <h2>월 수입 설정</h2>
+      </div>
+
+      <div class="input-row">
+
+        <input
+          type="number"
+          id="incomeInput"
+          placeholder="월 수입 입력"
+          style="flex:1;"
+        >
+
+        <button onclick="saveIncome()">저장</button>
+
+      </div>
+
+      <div class="summary-box" style="margin-top:12px;">
+
+        <div class="stat">
+          <span class="label">총 수입</span>
+          <span class="value" id="dispIncome">0원</span>
+        </div>
+
+        <div class="stat">
+          <span class="label">남은 고정지출</span>
+          <span
+            class="value"
+            id="dispExpense"
+            style="color:#ef4444 !important;"
+          >
+            0원
+          </span>
+        </div>
+
+      </div>
+
+      <div class="remaining">
+
+        <div
+          class="label"
+          style="font-size:0.8rem; color:#64748b !important;"
+        >
+          지출 차감 후 잔액
+        </div>
+
+        <div
+          class="value"
+          id="dispRemain"
+        >
+          0원
+        </div>
+
+      </div>
+
+      <div
+        class="daily-budget"
+        id="dispDaily"
+      >
+        이번 달 남은 <b>0일</b> 동안 하루 권장 생활비:
+        <b>0원</b>
+      </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         카테고리별 지출 비율 차트
+         ===================================================== -->
+
+    <div class="card">
+
+      <div class="card-title">
+        <h2>카테고리별 지출 구성</h2>
+      </div>
+
+      <div class="chart-container">
+        <canvas id="expenseChart"></canvas>
+      </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         고정 지출 항목 관리
+         ===================================================== -->
+
+    <div class="card">
+
+      <div class="card-title">
+
+        <h2>고정지출 항목 관리</h2>
+
+        <button
+          class="btn-reset"
+          onclick="resetPaidStatus()"
+        >
+          체크 전체해제
+        </button>
+
+      </div>
+
+
+      <!-- 입력 영역 -->
+
+      <div class="input-grid">
+
+        <div class="input-row">
+
+          <input
+            type="number"
+            id="itemDay"
+            style="width:55px;"
+            placeholder="일"
+            min="1"
+            max="31"
+          >
+
+          <select
+            id="itemCat"
+            style="flex:1;"
+          >
+
+            <option value="금융/카드">
+              금융/카드
+            </option>
+
+            <option value="교육/육아">
+              교육/육아
+            </option>
+
+            <option value="공과금/통신">
+              공과금/통신
+            </option>
+
+            <option value="주거/구독">
+              주거/구독
+            </option>
+
+            <option value="기타">
+              기타
+            </option>
+
+          </select>
+
+        </div>
+
+
+        <div class="input-row">
+
+          <input
+            type="text"
+            id="itemName"
+            placeholder="항목명"
+            style="flex:1;"
+          >
+
+          <input
+            type="number"
+            id="itemAmount"
+            placeholder="금액"
+            style="width:80px;"
+          >
+
+          <button onclick="addExpenseItem()">
+            추가
+          </button>
+
+        </div>
+
+      </div>
+
+
+      <!-- 고정지출 목록 -->
+
+      <div
+        class="expense-list"
+        id="itemList"
+      ></div>
+
+    </div>
+
+
+    <!-- =====================================================
+         데이터 백업 / 복원
+         ===================================================== -->
+
+    <div class="card">
+
+      <div class="card-title">
+        <h2>데이터 백업 및 복원</h2>
+      </div>
+
+      <div class="backup-group">
+
+        <button
+          class="btn-backup"
+          onclick="exportData()"
+        >
+          백업 다운로드
+        </button>
+
+        <button
+          class="btn-restore"
+          onclick="document.getElementById('fileInput').click()"
+        >
+          백업 불러오기
+        </button>
+
+      </div>
+
+      <input
+        type="file"
+        id="fileInput"
+        accept=".json"
+        style="display:none;"
+        onchange="importData(event)"
+      >
+
+    </div>
+
+  </div>
+
+
+  <script>
+
+    /* =====================================================
+       데이터
+       ===================================================== */
+
+    let data =
+      JSON.parse(
+        localStorage.getItem('monthly_budget_db')
+      ) ||
+      {
+        income: 0,
+        lastMonth: '',
+        items: []
+      };
+
+    let editingId = null;
+    let chart = null;
+
+
+    /* =====================================================
+       월 변경 체크
+       ===================================================== */
+
+    function checkMonthReset() {
+
+      const currentMonth =
+        new Date()
+          .toISOString()
+          .slice(0, 7);
+
+      if (data.lastMonth !== currentMonth) {
+
+        data.lastMonth = currentMonth;
+
+        data.items.forEach(
+          item => item.paid = false
+        );
+
+        save();
+      }
+    }
+
+
+    /* =====================================================
+       저장
+       ===================================================== */
+
+    function save() {
+
+      data.items.sort(
+        (a, b) =>
+          (a.day || 0) -
+          (b.day || 0)
+      );
+
+      localStorage.setItem(
+        'monthly_budget_db',
+        JSON.stringify(data)
+      );
+
+      render();
+    }
+
+
+    /* =====================================================
+       수입 저장
+       ===================================================== */
+
+    function saveIncome() {
+
+      const val =
+        Number(
+          document.getElementById('incomeInput').value
+        );
+
+      if (!isNaN(val)) {
+
+        data.income = val;
+
+        save();
+      }
+    }
+
+
+    /* =====================================================
+       고정지출 추가
+       ===================================================== */
+
+    function addExpenseItem() {
+
+      const day =
+        Number(
+          document.getElementById('itemDay').value
+        ) || 1;
+
+      const cat =
+        document.getElementById('itemCat').value;
+
+      const name =
+        document
+          .getElementById('itemName')
+          .value
+          .trim();
+
+      const amount =
+        Number(
+          document.getElementById('itemAmount').value
+        );
+
+      if (name && amount > 0) {
+
+        data.items.push({
+
+          id: Date.now(),
+
+          day: day,
+
+          category: cat,
+
+          name: name,
+
+          amount: amount,
+
+          paid: false
+
+        });
+
+        document.getElementById('itemDay').value = '';
+
+        document.getElementById('itemName').value = '';
+
+        document.getElementById('itemAmount').value = '';
+
+        save();
+      }
+    }
+
+
+    /* =====================================================
+       납부 체크
+       ===================================================== */
+
+    function togglePaid(id) {
+
+      const item =
+        data.items.find(
+          i => i.id === id
+        );
+
+      if (item) {
+
+        item.paid = !item.paid;
+
+        save();
+      }
+    }
+
+
+    /* =====================================================
+       전체 체크 해제
+       ===================================================== */
+
+    function resetPaidStatus() {
+
+      if (
+        confirm(
+          '모든 항목의 납부 완료 체크를 해제하시겠습니까?'
+        )
+      ) {
+
+        data.items.forEach(
+          i => i.paid = false
+        );
+
+        save();
+      }
+    }
+
+
+    /* =====================================================
+       수정 모드
+       ===================================================== */
+
+    function enableEdit(id) {
+
+      editingId = id;
+
+      render();
+    }
+
+
+    /* =====================================================
+       수정 저장
+       ===================================================== */
+
+    function saveEdit(id) {
+
+      const day =
+        Number(
+          document.getElementById(
+            `edit-day-${id}`
+          ).value
+        ) || 1;
+
+      const cat =
+        document.getElementById(
+          `edit-cat-${id}`
+        ).value;
+
+      const name =
+        document.getElementById(
+          `edit-name-${id}`
+        ).value
+        .trim();
+
+      const amount =
+        Number(
+          document.getElementById(
+            `edit-amount-${id}`
+          ).value
+        );
+
+      if (name && amount > 0) {
+
+        const item =
+          data.items.find(
+            i => i.id === id
+          );
+
+        if (item) {
+
+          item.day = day;
+
+          item.category = cat;
+
+          item.name = name;
+
+          item.amount = amount;
+        }
+
+        editingId = null;
+
+        save();
+      }
+    }
+
+
+    /* =====================================================
+       항목 삭제
+       ===================================================== */
+
+    function removeItem(id) {
+
+      data.items =
+        data.items.filter(
+          item => item.id !== id
+        );
+
+      if (editingId === id) {
+        editingId = null;
+      }
+
+      save();
+    }
+
+
+    /* =====================================================
+       데이터 백업
+       ===================================================== */
+
+    function exportData() {
+
+      const dataStr =
+        "data:text/json;charset=utf-8," +
+        encodeURIComponent(
+          JSON.stringify(
+            data,
+            null,
+            2
+          )
+        );
+
+      const downloadAnchor =
+        document.createElement('a');
+
+      const today =
+        new Date()
+          .toISOString()
+          .slice(0, 10);
+
+      downloadAnchor.setAttribute(
+        "href",
+        dataStr
+      );
+
+      downloadAnchor.setAttribute(
+        "download",
+        `budget_backup_${today}.json`
+      );
+
+      document.body.appendChild(
+        downloadAnchor
+      );
+
+      downloadAnchor.click();
+
+      downloadAnchor.remove();
+    }
+
+
+    /* =====================================================
+       데이터 복원
+       ===================================================== */
+
+    function importData(event) {
+
+      const file =
+        event.target.files[0];
+
+      if (!file) return;
+
+      const reader =
+        new FileReader();
+
+      reader.onload =
+        function(e) {
+
+          try {
+
+            const importedData =
+              JSON.parse(
+                e.target.result
+              );
+
+            if (
+              typeof importedData.income === 'number' &&
+              Array.isArray(importedData.items)
+            ) {
+
+              data = importedData;
+
+              save();
+
+              alert(
+                '성공적으로 데이터를 복원했습니다.'
+              );
+
+            } else {
+
+              alert(
+                '올바르지 않은 데이터 형식입니다.'
+              );
+            }
+
+          } catch (err) {
+
+            alert(
+              '파일을 읽는 중 오류가 발생했습니다.'
+            );
+          }
+        };
+
+      reader.readAsText(file);
+    }
+
+
+    /* =====================================================
+       화면 렌더링
+       ===================================================== */
+
+    function render() {
+
+      const totalExpense =
+        data.items.reduce(
+          (acc, cur) =>
+            acc + cur.amount,
+          0
+        );
+
+      const pendingExpense =
+        data.items
+          .filter(i => !i.paid)
+          .reduce(
+            (acc, cur) =>
+              acc + cur.amount,
+            0
+          );
+
+      const remaining =
+        data.income -
+        totalExpense;
+
+
+      const now = new Date();
+
+      const lastDayOfMonth =
+        new Date(
+          now.getFullYear(),
+          now.getMonth() + 1,
+          0
+        ).getDate();
+
+      const daysLeft =
+        Math.max(
+          1,
+          lastDayOfMonth -
+          now.getDate() +
+          1
+        );
+
+      const dailyBudget =
+        Math.max(
+          0,
+          Math.floor(
+            (data.income - pendingExpense) /
+            daysLeft
+          )
+        );
+
+
+      /* 수입 */
+
+      document.getElementById(
+        'dispIncome'
+      ).innerText =
+        data.income.toLocaleString() +
+        '원';
+
+
+      /* 남은 고정지출 */
+
+      document.getElementById(
+        'dispExpense'
+      ).innerText =
+        pendingExpense.toLocaleString() +
+        '원';
+
+
+      /* 잔액 */
+
+      document.getElementById(
+        'dispRemain'
+      ).innerText =
+        remaining.toLocaleString() +
+        '원';
+
+
+      /* 하루 권장 생활비 */
+
+      document.getElementById(
+        'dispDaily'
+      ).innerHTML =
+        `이번 달 남은 <b>${daysLeft}일</b> 동안 하루 권장 생활비: <b>${dailyBudget.toLocaleString()}원</b>`;
+
+
+      /* =================================================
+         고정지출 목록
+         ================================================= */
+
+      const listEl =
+        document.getElementById(
+          'itemList'
+        );
+
+
+      listEl.innerHTML =
+        data.items
+          .map(item => {
+
+            /* -----------------------------
+               수정 모드
+               ----------------------------- */
+
+            if (
+              editingId === item.id
+            ) {
+
+              return `
+
+                <div
+                  class="expense-item"
+                  style="
+                    flex-direction:column;
+                    align-items:stretch;
+                    gap:6px;
+                    overflow:visible !important;
+                  "
+                >
+
+                  <div class="input-row">
+
+                    <input
+                      type="number"
+                      id="edit-day-${item.id}"
+                      value="${item.day || 1}"
+                      style="width:50px;"
+                      min="1"
+                      max="31"
+                    >
+
+                    <select
+                      id="edit-cat-${item.id}"
+                      style="flex:1;"
+                    >
+
+                      <option
+                        value="금융/카드"
+                        ${item.category === '금융/카드' ? 'selected' : ''}
+                      >
+                        금융/카드
+                      </option>
+
+                      <option
+                        value="교육/육아"
+                        ${item.category === '교육/육아' ? 'selected' : ''}
+                      >
+                        교육/육아
+                      </option>
+
+                      <option
+                        value="공과금/통신"
+                        ${item.category === '공과금/통신' ? 'selected' : ''}
+                      >
+                        공과금/통신
+                      </option>
+
+                      <option
+                        value="주거/구독"
+                        ${item.category === '주거/구독' ? 'selected' : ''}
+                      >
+                        주거/구독
+                      </option>
+
+                      <option
+                        value="기타"
+                        ${item.category === '기타' ? 'selected' : ''}
+                      >
+                        기타
+                      </option>
+
+                    </select>
+
+                  </div>
+
+
+                  <div class="input-row">
+
+                    <input
+                      type="text"
+                      id="edit-name-${item.id}"
+                      value="${item.name}"
+                      style="flex:1;"
+                    >
+
+                    <input
+                      type="number"
+                      id="edit-amount-${item.id}"
+                      value="${item.amount}"
+                      style="width:80px;"
+                    >
+
+                    <button
+                      class="btn-save"
+                      onclick="saveEdit(${item.id})"
+                    >
+                      완료
+                    </button>
+
+                  </div>
+
+                </div>
+
+              `;
+            }
+
+
+            /* -----------------------------
+               일반 표시
+               ----------------------------- */
+
+            return `
+
+              <div
+                class="expense-item ${item.paid ? 'paid' : ''}"
+              >
+
+                <div class="item-left">
+
+                  <input
+                    type="checkbox"
+                    ${item.paid ? 'checked' : ''}
+                    onchange="togglePaid(${item.id})"
+                  >
+
+                  <span class="item-day">
+                    ${item.day || 1}일
+                  </span>
+
+                  <div class="item-info">
+
+                    <span class="item-name">
+                      ${item.name}
+                    </span>
+
+                    <span class="item-cat">
+                      [${item.category || '기타'}]
+                    </span>
+
+                  </div>
+
+                </div>
+
+
+                <div class="item-right">
+
+                  <span class="item-amount">
+                    ${item.amount.toLocaleString()}원
+                  </span>
+
+                  <button
+                    class="btn-edit"
+                    onclick="enableEdit(${item.id})"
+                  >
+                    수정
+                  </button>
+
+                  <button
+                    class="btn-del"
+                    onclick="removeItem(${item.id})"
+                  >
+                    삭제
+                  </button>
+
+                </div>
+
+              </div>
+
+            `;
+
+          })
+          .join('');
+
+
+      updateCategoryChart(
+        remaining
+      );
+    }
+
+
+    /* =====================================================
+       카테고리 차트
+       ===================================================== */
+
+    function updateCategoryChart(
+      remaining
+    ) {
+
+      const ctx =
+        document
+          .getElementById(
+            'expenseChart'
+          )
+          .getContext('2d');
+
+
+      const categoryTotals = {};
+
+
+      data.items.forEach(
+        item => {
+
+          const cat =
+            item.category ||
+            '기타';
+
+          categoryTotals[cat] =
+            (
+              categoryTotals[cat] ||
+              0
+            ) +
+            item.amount;
+        }
+      );
+
+
+      const labels = [];
+
+      const chartData = [];
+
+      const colors = [];
+
+
+      const colorMap = {
+
+        '금융/카드':
+          '#ef4444',
+
+        '교육/육아':
+          '#f59e0b',
+
+        '공과금/통신':
+          '#10b981',
+
+        '주거/구독':
+          '#6366f1',
+
+        '기타':
+          '#8b5cf6',
+
+        '가용 잔액':
+          '#2563eb'
+      };
+
+
+      for (
+        const [cat, sum]
+        of Object.entries(
+          categoryTotals
+        )
+      ) {
+
+        if (sum > 0) {
+
+          labels.push(cat);
+
+          chartData.push(sum);
+
+          colors.push(
+            colorMap[cat] ||
+            '#64748b'
+          );
+        }
+      }
+
+
+      if (remaining > 0) {
+
+        labels.push(
+          '가용 잔액'
+        );
+
+        chartData.push(
+          remaining
+        );
+
+        colors.push(
+          colorMap['가용 잔액']
+        );
+      }
+
+
+      const totalVal =
+        chartData.reduce(
+          (a, b) => a + b,
+          0
+        );
+
+
+      if (chart) {
+        chart.destroy();
+      }
+
+
+      Chart.register(
+        ChartDataLabels
+      );
+
+
+      chart =
+        new Chart(
+          ctx,
+          {
+
+            type: 'doughnut',
+
+            data: {
+
+              labels: labels,
+
+              datasets: [{
+
+                data: chartData,
+
+                backgroundColor:
+                  colors
+
+              }]
+            },
+
+
+            options: {
+
+              responsive: true,
+
+              maintainAspectRatio:
+                true,
+
+
+              plugins: {
+
+                legend: {
+
+                  position:
+                    'bottom',
+
+                  labels: {
+
+                    color:
+                      '#0f172a',
+
+                    padding:
+                      8,
+
+                    font: {
+                      size: 10
+                    },
+
+
+                    generateLabels:
+                      function(chart) {
+
+                        const data =
+                          chart.data;
+
+                        return data.labels.map(
+                          (label, i) => {
+
+                            const value =
+                              data
+                                .datasets[0]
+                                .data[i];
+
+                            const pct =
+                              totalVal > 0
+                                ? (
+                                    value /
+                                    totalVal *
+                                    100
+                                  ).toFixed(1)
+                                : 0;
+
+                            return {
+
+                              text:
+                                `${label}: ${value.toLocaleString()}원 (${pct}%)`,
+
+                              fillStyle:
+                                data
+                                  .datasets[0]
+                                  .backgroundColor[i],
+
+                              hidden:
+                                isNaN(
+                                  data
+                                    .datasets[0]
+                                    .data[i]
+                                ) ||
+                                chart
+                                  .getDatasetMeta(0)
+                                  .data[i]
+                                  .hidden,
+
+                              index: i
+                            };
+
+                          }
+                        );
+                      }
+                  }
+                },
+
+
+                datalabels: {
+
+                  color:
+                    '#ffffff',
+
+                  font: {
+
+                    weight:
+                      'bold',
+
+                    size:
+                      10
+                  },
+
+                  formatter:
+                    (value) => {
+
+                      if (
+                        totalVal === 0
+                      ) {
+                        return '';
+                      }
+
+                      const pct =
+                        (
+                          value /
+                          totalVal *
+                          100
+                        ).toFixed(1);
+
+                      return pct >= 5
+                        ? `${pct}%`
+                        : '';
+                    }
+                }
+              }
+            }
+          }
+        );
+    }
+
+
+    /* =====================================================
+       Service Worker
+       ===================================================== */
+
+    if (
+      'serviceWorker' in navigator
+    ) {
+
+      navigator.serviceWorker
+        .register('./sw.js')
+        .catch(
+          () => {}
+        );
+    }
+
+
+    /* =====================================================
+       시작
+       ===================================================== */
+
+    checkMonthReset();
+
+    render();
+
+  </script>
+
+</body>
+</html>
