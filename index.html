@@ -3,45 +3,56 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <!-- 강제 다크모드 방지 meta 태그 -->
+  <meta name="color-scheme" content="light only">
+  <meta name="supported-color-schemes" content="light">
   <title>월간 고정지출 대시보드</title>
   <link rel="manifest" href="manifest.json">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
   <style>
-    :root { 
-      --bg: #f8fafc; 
-      --card: #ffffff; 
-      --primary: #2563eb; 
-      --text: #0f172a; 
-      --subtext: #475569;
-      --border: #e2e8f0;
+    /* 브라우저 강제 다크모드 무력화 설정 */
+    :root {
+      color-scheme: light only !important;
     }
     
-    * { box-sizing: border-box; }
+    * { 
+      box-sizing: border-box; 
+      -webkit-tap-highlight-color: transparent;
+    }
+
     body { 
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
-      background: var(--bg); 
-      color: var(--text); 
+      background-color: #f8fafc !important; 
+      color: #0f172a !important; 
       margin: 0; 
       padding: 12px; 
     }
     
-    .container { max-width: 500px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
-    .card { background: var(--card); border-radius: 12px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); border: 1px solid var(--border); }
+    .container { max-width: 480px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
+    
+    .card { 
+      background-color: #ffffff !important; 
+      color: #0f172a !important; 
+      border-radius: 12px; 
+      padding: 16px; 
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08); 
+      border: 1px solid #e2e8f0; 
+    }
     
     .card-title { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-    h2 { margin: 0; font-size: 1rem; color: var(--subtext); }
+    h2 { margin: 0; font-size: 1rem; color: #475569 !important; }
     
     .summary-box { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
     .stat { display: flex; flex-direction: column; }
-    .stat .label { font-size: 0.8rem; color: var(--subtext); }
-    .stat .value { font-size: 1.15rem; font-weight: bold; margin-top: 2px; }
+    .stat .label { font-size: 0.8rem; color: #64748b !important; }
+    .stat .value { font-size: 1.15rem; font-weight: bold; margin-top: 2px; color: #0f172a !important; }
     
-    .remaining { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 12px; text-align: center; margin-bottom: 8px; }
-    .remaining .value { font-size: 1.4rem; font-weight: bold; color: var(--primary); }
+    .remaining { background-color: #eff6ff !important; border: 1px solid #bfdbfe; border-radius: 8px; padding: 12px; text-align: center; margin-bottom: 8px; }
+    .remaining .value { font-size: 1.4rem; font-weight: bold; color: #2563eb !important; }
     
-    .daily-budget { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 10px; text-align: center; font-size: 0.85rem; color: #166534; }
-    .daily-budget b { font-size: 1.05rem; color: #15803d; }
+    .daily-budget { background-color: #f0fdf4 !important; border: 1px solid #bbf7d0; border-radius: 8px; padding: 10px; text-align: center; font-size: 0.85rem; color: #166534 !important; }
+    .daily-budget b { font-size: 1.05rem; color: #15803d !important; }
     
     /* 입력 그리드 */
     .input-grid { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
@@ -49,69 +60,57 @@
     
     input, select { 
       padding: 10px; 
-      border: 1px solid #cbd5e1; 
+      border: 1px solid #cbd5e1 !important; 
       border-radius: 6px; 
       font-size: 0.9rem; 
-      background: #ffffff; 
-      color: #0f172a;
+      background-color: #ffffff !important; 
+      color: #0f172a !important; 
     }
     
-    button { background: var(--primary); color: #ffffff; border: none; border-radius: 6px; padding: 8px 12px; cursor: pointer; font-weight: bold; white-space: nowrap; flex-shrink: 0; }
+    button { background-color: #2563eb !important; color: #ffffff !important; border: none; border-radius: 6px; padding: 8px 12px; cursor: pointer; font-weight: bold; white-space: nowrap; }
     
-    /* 항목 리스트 - 세로 찌그러짐 방지 핵심 스타일 */
-    .item-list { list-style: none; padding: 0; margin: 0; }
-    .item { 
-      display: flex; 
-      justify-content: space-between; 
-      align-items: center; 
-      padding: 12px 0; 
-      border-bottom: 1px solid var(--border); 
-      gap: 8px; 
-      width: 100%;
+    /* 완벽한 줄바꿈 방지를 위한 모바일 최적화 테이블 */
+    .expense-table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+    .expense-table tr { border-bottom: 1px solid #e2e8f0; }
+    .expense-table tr.paid td { color: #94a3b8 !important; }
+    .expense-table tr.paid .item-name { text-decoration: line-through; }
+    
+    .expense-table td { 
+      padding: 10px 2px; 
+      vertical-align: middle; 
+      color: #0f172a !important; 
+      font-size: 0.85rem;
     }
-    .item.paid .item-name { text-decoration: line-through; color: #94a3b8; }
     
-    .item-left { display: flex; align-items: center; gap: 6px; flex: 1; min-width: 0; }
+    .td-chk { width: 28px; text-align: center; }
+    .td-day { width: 38px; text-align: center; }
+    .td-info { padding-left: 4px; }
+    .td-amount { width: 85px; text-align: right; font-weight: bold; white-space: nowrap; }
+    .td-btns { width: 80px; text-align: right; white-space: nowrap; }
     
-    /* 글자가 세로로 깨지지 않도록 무조건 한 줄 유지 */
     .item-day { 
-      background: #e2e8f0; 
-      color: #334155; 
-      font-size: 0.75rem; 
+      background-color: #e2e8f0 !important; 
+      color: #334155 !important; 
+      font-size: 0.7rem; 
       font-weight: bold; 
-      padding: 2px 6px; 
+      padding: 2px 4px; 
       border-radius: 4px; 
-      white-space: nowrap; 
-      flex-shrink: 0; 
-    }
-    .item-name { 
-      font-size: 0.95rem; 
-      font-weight: 600; 
-      white-space: nowrap; 
-      overflow: hidden; 
-      text-overflow: ellipsis; 
-      flex-shrink: 1;
-    }
-    .item-cat { 
-      font-size: 0.75rem; 
-      color: #64748b; 
-      white-space: nowrap; 
-      flex-shrink: 0; 
+      display: inline-block;
     }
     
-    .item-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
-    .item-amount { font-size: 0.95rem; font-weight: bold; white-space: nowrap; }
+    .item-name { font-size: 0.9rem; font-weight: 600; display: block; line-height: 1.2; }
+    .item-cat { font-size: 0.75rem; color: #64748b !important; display: block; margin-top: 2px; }
     
-    .btn-edit { background: #64748b; padding: 5px 8px; font-size: 0.75rem; }
-    .btn-del { background: #ef4444; padding: 5px 8px; font-size: 0.75rem; }
-    .btn-save { background: #10b981; padding: 6px 10px; font-size: 0.8rem; }
-    .btn-reset { background: #f59e0b; font-size: 0.75rem; padding: 4px 8px; }
+    .btn-edit { background-color: #64748b !important; color: #fff !important; padding: 4px 6px; font-size: 0.75rem; border-radius: 4px; }
+    .btn-del { background-color: #ef4444 !important; color: #fff !important; padding: 4px 6px; font-size: 0.75rem; border-radius: 4px; }
+    .btn-save { background-color: #10b981 !important; color: #fff !important; padding: 6px 10px; font-size: 0.8rem; border-radius: 4px; }
+    .btn-reset { background-color: #f59e0b !important; color: #fff !important; font-size: 0.75rem; padding: 4px 8px; border-radius: 4px; }
     
     .backup-group { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-    .btn-backup { background: #475569; width: 100%; }
-    .btn-restore { background: #0284c7; width: 100%; }
+    .btn-backup { background-color: #475569 !important; width: 100%; }
+    .btn-restore { background-color: #0284c7 !important; width: 100%; }
     
-    input[type="checkbox"] { width: 20px; height: 20px; cursor: pointer; flex-shrink: 0; margin-right: 4px; }
+    input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; }
   </style>
 </head>
 <body>
@@ -125,10 +124,10 @@
       </div>
       <div class="summary-box" style="margin-top:12px;">
         <div class="stat"><span class="label">총 수입</span><span class="value" id="dispIncome">0원</span></div>
-        <div class="stat"><span class="label">남은 고정지출</span><span class="value" id="dispExpense" style="color:#ef4444;">0원</span></div>
+        <div class="stat"><span class="label">남은 고정지출</span><span class="value" id="dispExpense" style="color:#ef4444 !important;">0원</span></div>
       </div>
       <div class="remaining">
-        <div class="label" style="font-size:0.8rem; color:#64748b;">지출 차감 후 잔액</div>
+        <div class="label" style="font-size:0.8rem; color:#64748b !important;">지출 차감 후 잔액</div>
         <div class="value" id="dispRemain">0원</div>
       </div>
       <div class="daily-budget" id="dispDaily">
@@ -167,7 +166,9 @@
         </div>
       </div>
       
-      <ul class="item-list" id="itemList"></ul>
+      <table class="expense-table">
+        <tbody id="itemList"></tbody>
+      </table>
     </div>
 
     <!-- 데이터 백업 / 복원 -->
@@ -318,39 +319,47 @@
       listEl.innerHTML = data.items.map(item => {
         if (editingId === item.id) {
           return `
-            <li class="item" style="flex-direction:column; align-items:stretch;">
-              <div class="input-row">
-                <input type="number" id="edit-day-${item.id}" value="${item.day || 1}" style="width:65px;" min="1" max="31">
-                <select id="edit-cat-${item.id}" style="flex:1;">
-                  <option value="금융/카드" ${item.category==='금융/카드'?'selected':''}>금융/카드</option>
-                  <option value="교육/육아" ${item.category==='교육/육아'?'selected':''}>교육/육아</option>
-                  <option value="공과금/통신" ${item.category==='공과금/통신'?'selected':''}>공과금/통신</option>
-                  <option value="주거/구독" ${item.category==='주거/구독'?'selected':''}>주거/구독</option>
-                  <option value="기타" ${item.category==='기타'?'selected':''}>기타</option>
-                </select>
-              </div>
-              <div class="input-row" style="margin-top:6px;">
-                <input type="text" id="edit-name-${item.id}" value="${item.name}" style="flex:1;">
-                <input type="number" id="edit-amount-${item.id}" value="${item.amount}" style="width:90px;">
-                <button class="btn-save" onclick="saveEdit(${item.id})">완료</button>
-              </div>
-            </li>
+            <tr>
+              <td colspan="5">
+                <div class="input-row">
+                  <input type="number" id="edit-day-${item.id}" value="${item.day || 1}" style="width:60px;" min="1" max="31">
+                  <select id="edit-cat-${item.id}" style="flex:1;">
+                    <option value="금융/카드" ${item.category==='금융/카드'?'selected':''}>금융/카드</option>
+                    <option value="교육/육아" ${item.category==='교육/육아'?'selected':''}>교육/육아</option>
+                    <option value="공과금/통신" ${item.category==='공과금/통신'?'selected':''}>공과금/통신</option>
+                    <option value="주거/구독" ${item.category==='주거/구독'?'selected':''}>주거/구독</option>
+                    <option value="기타" ${item.category==='기타'?'selected':''}>기타</option>
+                  </select>
+                </div>
+                <div class="input-row" style="margin-top:6px;">
+                  <input type="text" id="edit-name-${item.id}" value="${item.name}" style="flex:1;">
+                  <input type="number" id="edit-amount-${item.id}" value="${item.amount}" style="width:90px;">
+                  <button class="btn-save" onclick="saveEdit(${item.id})">완료</button>
+                </div>
+              </td>
+            </tr>
           `;
         }
         return `
-          <li class="item ${item.paid ? 'paid' : ''}">
-            <div class="item-left">
+          <tr class="${item.paid ? 'paid' : ''}">
+            <td class="td-chk">
               <input type="checkbox" ${item.paid ? 'checked' : ''} onchange="togglePaid(${item.id})">
+            </td>
+            <td class="td-day">
               <span class="item-day">${item.day || 1}일</span>
+            </td>
+            <td class="td-info">
               <span class="item-name">${item.name}</span>
               <span class="item-cat">[${item.category || '기타'}]</span>
-            </div>
-            <div class="item-right">
-              <span class="item-amount">${item.amount.toLocaleString()}원</span>
+            </td>
+            <td class="td-amount">
+              ${item.amount.toLocaleString()}원
+            </td>
+            <td class="td-btns">
               <button class="btn-edit" onclick="enableEdit(${item.id})">수정</button>
               <button class="btn-del" onclick="removeItem(${item.id})">삭제</button>
-            </div>
-          </li>
+            </td>
+          </tr>
         `;
       }).join('');
 
@@ -414,7 +423,7 @@
             legend: {
               position: 'bottom',
               labels: {
-                color: '#1e293b',
+                color: '#0f172a',
                 padding: 10,
                 font: { size: 11 },
                 generateLabels: function(chart) {
