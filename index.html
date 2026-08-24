@@ -2,9 +2,9 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no, maximum-scale=1.0, user-scalable=no">
   
-  <!-- 1. 브라우저 강제 다크모드 차단 Meta 태그 -->
+  <!-- 강제 다크모드 무력화 메타 태그 -->
   <meta name="color-scheme" content="light only">
   <meta name="supported-color-schemes" content="light">
   <meta name="theme-color" content="#ffffff">
@@ -15,27 +15,37 @@
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
   
   <style>
-    /* 2. 강제 색상 반전 방지 및 글로벌 라이트모드 고정 */
+    /* 스마트폰 OS 및 브라우저 강제 다크모드/색상반전 완벽 차단 */
     :root {
       color-scheme: light only !important;
       forced-color-adjust: none !important;
     }
+
+    html {
+      background-color: #f8fafc !important;
+      color: #0f172a !important;
+      filter: none !important;
+      -webkit-filter: none !important;
+    }
     
     * { 
-      box-sizing: border-box; 
+      box-sizing: border-box !important; 
       -webkit-tap-highlight-color: transparent;
       color-scheme: light only !important;
     }
 
-    html, body {
+    body { 
       background-color: #f8fafc !important; 
       color: #0f172a !important; 
       margin: 0; 
       padding: 12px; 
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+      overflow-x: hidden;
+      width: 100%;
     }
     
     .container { 
+      width: 100%;
       max-width: 480px; 
       margin: 0 auto; 
       display: flex; 
@@ -47,9 +57,11 @@
       background-color: #ffffff !important; 
       color: #0f172a !important; 
       border-radius: 12px; 
-      padding: 16px; 
+      padding: 14px; 
       box-shadow: 0 1px 3px rgba(0,0,0,0.08); 
       border: 1px solid #e2e8f0 !important; 
+      width: 100%;
+      box-sizing: border-box;
     }
     
     .card-title { 
@@ -72,34 +84,21 @@
       margin-bottom: 12px; 
     }
     
-    .stat { 
-      display: flex; 
-      flex-direction: column; 
-    }
-    
-    .stat .label { 
-      font-size: 0.8rem; 
-      color: #64748b !important; 
-    }
-    
-    .stat .value { 
-      font-size: 1.15rem; 
-      font-weight: bold; 
-      margin-top: 2px; 
-      color: #0f172a !important; 
-    }
+    .stat { display: flex; flex-direction: column; }
+    .stat .label { font-size: 0.8rem; color: #64748b !important; }
+    .stat .value { font-size: 1.1rem; font-weight: bold; margin-top: 2px; color: #0f172a !important; }
     
     .remaining { 
       background-color: #eff6ff !important; 
       border: 1px solid #bfdbfe !important; 
       border-radius: 8px; 
-      padding: 12px; 
+      padding: 10px; 
       text-align: center; 
       margin-bottom: 8px; 
     }
     
     .remaining .value { 
-      font-size: 1.4rem; 
+      font-size: 1.3rem; 
       font-weight: bold; 
       color: #2563eb !important; 
     }
@@ -110,21 +109,19 @@
       border-radius: 8px; 
       padding: 10px; 
       text-align: center; 
-      font-size: 0.85rem; 
+      font-size: 0.8rem; 
       color: #166534 !important; 
     }
     
-    .daily-budget b { 
-      font-size: 1.05rem; 
-      color: #15803d !important; 
-    }
+    .daily-budget b { font-size: 0.95rem; color: #15803d !important; }
     
-    /* 입력 양식 스타일 */
+    /* 입력 양식 - 너비 초과 방지 최적화 */
     .input-grid { 
       display: flex; 
       flex-direction: column; 
       gap: 8px; 
       margin-bottom: 12px; 
+      width: 100%;
     }
     
     .input-row { 
@@ -134,10 +131,11 @@
     }
     
     input, select { 
-      padding: 10px; 
+      min-width: 0; /* flex 자식 요소 너비 삐져나침 방지 */
+      padding: 8px 10px; 
       border: 1px solid #cbd5e1 !important; 
       border-radius: 6px; 
-      font-size: 0.9rem; 
+      font-size: 0.85rem; 
       background-color: #ffffff !important; 
       color: #0f172a !important; 
     }
@@ -151,6 +149,7 @@
       cursor: pointer; 
       font-weight: bold; 
       white-space: nowrap; 
+      flex-shrink: 0;
     }
     
     /* 테이블 레이아웃 최적화 */
@@ -158,32 +157,26 @@
       width: 100%; 
       border-collapse: collapse; 
       margin-top: 8px; 
+      table-layout: fixed;
     }
     
-    .expense-table tr { 
-      border-bottom: 1px solid #e2e8f0 !important; 
-    }
-    
-    .expense-table tr.paid td { 
-      color: #94a3b8 !important; 
-    }
-    
-    .expense-table tr.paid .item-name { 
-      text-decoration: line-through; 
-    }
+    .expense-table tr { border-bottom: 1px solid #e2e8f0 !important; }
+    .expense-table tr.paid td { color: #94a3b8 !important; }
+    .expense-table tr.paid .item-name { text-decoration: line-through; }
     
     .expense-table td { 
-      padding: 10px 2px; 
+      padding: 8px 2px; 
       vertical-align: middle; 
       color: #0f172a !important; 
-      font-size: 0.85rem;
+      font-size: 0.8rem;
+      word-break: break-all;
     }
     
-    .td-chk { width: 28px; text-align: center; }
-    .td-day { width: 38px; text-align: center; }
-    .td-info { padding-left: 4px; }
-    .td-amount { width: 85px; text-align: right; font-weight: bold; white-space: nowrap; }
-    .td-btns { width: 80px; text-align: right; white-space: nowrap; }
+    .td-chk { width: 26px; text-align: center; }
+    .td-day { width: 36px; text-align: center; }
+    .td-info { padding-left: 2px; }
+    .td-amount { width: 75px; text-align: right; font-weight: bold; white-space: nowrap; }
+    .td-btns { width: 72px; text-align: right; white-space: nowrap; }
     
     .item-day { 
       background-color: #e2e8f0 !important; 
@@ -196,7 +189,7 @@
     }
     
     .item-name { 
-      font-size: 0.9rem; 
+      font-size: 0.85rem; 
       font-weight: 600; 
       display: block; 
       line-height: 1.2; 
@@ -204,22 +197,29 @@
     }
     
     .item-cat { 
-      font-size: 0.75rem; 
+      font-size: 0.7rem; 
       color: #64748b !important; 
       display: block; 
       margin-top: 2px; 
     }
     
-    .btn-edit { background-color: #64748b !important; color: #ffffff !important; padding: 4px 6px; font-size: 0.75rem; border-radius: 4px; }
-    .btn-del { background-color: #ef4444 !important; color: #ffffff !important; padding: 4px 6px; font-size: 0.75rem; border-radius: 4px; }
-    .btn-save { background-color: #10b981 !important; color: #ffffff !important; padding: 6px 10px; font-size: 0.8rem; border-radius: 4px; }
+    .btn-edit { background-color: #64748b !important; color: #ffffff !important; padding: 4px 5px; font-size: 0.7rem; border-radius: 4px; }
+    .btn-del { background-color: #ef4444 !important; color: #ffffff !important; padding: 4px 5px; font-size: 0.7rem; border-radius: 4px; }
+    .btn-save { background-color: #10b981 !important; color: #ffffff !important; padding: 6px 8px; font-size: 0.75rem; border-radius: 4px; }
     .btn-reset { background-color: #f59e0b !important; color: #ffffff !important; font-size: 0.75rem; padding: 4px 8px; border-radius: 4px; }
     
     .backup-group { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
     .btn-backup { background-color: #475569 !important; width: 100%; }
     .btn-restore { background-color: #0284c7 !important; width: 100%; }
     
-    input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; }
+    input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; }
+    
+    .chart-container {
+      position: relative;
+      width: 100%;
+      max-width: 300px;
+      margin: 0 auto;
+    }
   </style>
 </head>
 <body>
@@ -247,7 +247,9 @@
     <!-- 카테고리별 지출 비율 차트 -->
     <div class="card">
       <div class="card-title"><h2>카테고리별 지출 구성</h2></div>
-      <canvas id="expenseChart" height="210"></canvas>
+      <div class="chart-container">
+        <canvas id="expenseChart"></canvas>
+      </div>
     </div>
 
     <!-- 고정 지출 항목 관리 -->
@@ -259,7 +261,7 @@
       
       <div class="input-grid">
         <div class="input-row">
-          <input type="number" id="itemDay" style="width: 70px;" placeholder="일" min="1" max="31">
+          <input type="number" id="itemDay" style="width: 60px;" placeholder="일" min="1" max="31">
           <select id="itemCat" style="flex:1;">
             <option value="금융/카드">금융/카드</option>
             <option value="교육/육아">교육/육아</option>
@@ -270,7 +272,7 @@
         </div>
         <div class="input-row">
           <input type="text" id="itemName" placeholder="항목명" style="flex:1;">
-          <input type="number" id="itemAmount" placeholder="금액" style="width: 100px;">
+          <input type="number" id="itemAmount" placeholder="금액" style="width: 85px;">
           <button onclick="addExpenseItem()">추가</button>
         </div>
       </div>
@@ -431,7 +433,7 @@
             <tr>
               <td colspan="5">
                 <div class="input-row">
-                  <input type="number" id="edit-day-${item.id}" value="${item.day || 1}" style="width:60px;" min="1" max="31">
+                  <input type="number" id="edit-day-${item.id}" value="${item.day || 1}" style="width:50px;" min="1" max="31">
                   <select id="edit-cat-${item.id}" style="flex:1;">
                     <option value="금융/카드" ${item.category==='금융/카드'?'selected':''}>금융/카드</option>
                     <option value="교육/육아" ${item.category==='교육/육아'?'selected':''}>교육/육아</option>
@@ -442,7 +444,7 @@
                 </div>
                 <div class="input-row" style="margin-top:6px;">
                   <input type="text" id="edit-name-${item.id}" value="${item.name}" style="flex:1;">
-                  <input type="number" id="edit-amount-${item.id}" value="${item.amount}" style="width:90px;">
+                  <input type="number" id="edit-amount-${item.id}" value="${item.amount}" style="width:80px;">
                   <button class="btn-save" onclick="saveEdit(${item.id})">완료</button>
                 </div>
               </td>
@@ -528,13 +530,14 @@
         },
         options: {
           responsive: true,
+          maintainAspectRatio: true,
           plugins: {
             legend: {
               position: 'bottom',
               labels: {
                 color: '#0f172a',
-                padding: 10,
-                font: { size: 11 },
+                padding: 8,
+                font: { size: 10 },
                 generateLabels: function(chart) {
                   const data = chart.data;
                   return data.labels.map((label, i) => {
@@ -552,7 +555,7 @@
             },
             datalabels: {
               color: '#ffffff',
-              font: { weight: 'bold', size: 11 },
+              font: { weight: 'bold', size: 10 },
               formatter: (value) => {
                 if (totalVal === 0) return '';
                 const pct = (value / totalVal * 100).toFixed(1);
