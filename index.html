@@ -7,7 +7,6 @@
         content="width=device-width, initial-scale=1.0, shrink-to-fit=no,
                  maximum-scale=1.0, user-scalable=no">
 
-  <!-- 다크/라이트 모드 모두 지원 -->
   <meta name="color-scheme" content="light dark">
   <meta name="theme-color" content="#f8fafc">
 
@@ -19,10 +18,6 @@
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
 
   <style>
-
-    /* =========================================================
-       기본 색상 - 라이트 모드
-       ========================================================= */
 
     :root {
       color-scheme: light dark;
@@ -57,13 +52,7 @@
       --modal-bg: rgba(0,0,0,0.5);
     }
 
-
-    /* =========================================================
-       다크 모드
-       ========================================================= */
-
     @media (prefers-color-scheme: dark) {
-
       :root {
         --bg: #000000;
         --card: #111111;
@@ -88,13 +77,7 @@
         --line: #333333;
         --modal-bg: rgba(0,0,0,0.7);
       }
-
     }
-
-
-    /* =========================================================
-       전체
-       ========================================================= */
 
     html {
       background-color: var(--bg);
@@ -118,11 +101,6 @@
       overflow-x: hidden;
       width: 100%;
     }
-
-
-    /* =========================================================
-       컨테이너 & 카드
-       ========================================================= */
 
     .container {
       width: 100%;
@@ -157,11 +135,6 @@
       color: var(--title);
       line-height: 1.3;
     }
-
-
-    /* =========================================================
-       수입 요약 / 잔액 / 하루 생활비
-       ========================================================= */
 
     .summary-box {
       display: grid;
@@ -223,11 +196,6 @@
       .daily-budget b { color: #4ade80; }
     }
 
-
-    /* =========================================================
-       입력 요소
-       ========================================================= */
-
     .input-grid {
       display: flex;
       flex-direction: column;
@@ -267,11 +235,6 @@
       white-space: nowrap;
       flex-shrink: 0;
     }
-
-
-    /* =========================================================
-       고정지출 목록
-       ========================================================= */
 
     .expense-list {
       display: flex;
@@ -319,7 +282,7 @@
       min-width: 0;
       overflow: hidden;
       line-height: 1.25;
-      cursor: pointer; /* 터치 시 팝업 힌트 */
+      cursor: pointer;
     }
 
     .item-day {
@@ -360,11 +323,6 @@
       white-space: nowrap;
     }
 
-
-    /* =========================================================
-       버튼 스타일
-       ========================================================= */
-
     .btn-edit { background-color: #64748b; color: #fff; padding: 4px 5px; font-size: 0.7rem; border-radius: 4px; }
     .btn-del { background-color: #ef4444; color: #fff; padding: 4px 5px; font-size: 0.7rem; border-radius: 4px; }
     .btn-save { background-color: #10b981; color: #fff; padding: 6px 8px; font-size: 0.75rem; border-radius: 4px; }
@@ -384,11 +342,6 @@
 
     .chart-container { position: relative; width: 100%; max-width: 300px; margin: 0 auto; }
 
-
-    /* =========================================================
-       상세보기 팝업 (모달) 스타일
-       ========================================================= */
-
     .modal-overlay {
       display: none;
       position: fixed;
@@ -400,9 +353,7 @@
       padding: 20px;
     }
 
-    .modal-overlay.active {
-      display: flex;
-    }
+    .modal-overlay.active { display: flex; }
 
     .modal-content {
       background-color: var(--card);
@@ -434,12 +385,7 @@
       color: var(--text);
     }
 
-    .modal-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
+    .modal-row { display: flex; justify-content: space-between; align-items: center; }
     .modal-row .label { color: var(--subtext); font-size: 0.85rem; }
     .modal-row .val { font-weight: 600; }
 
@@ -451,8 +397,6 @@
       font-size: 0.9rem;
     }
 
-
-    /* 작은 화면 대응 */
     @media (max-width: 360px) {
       body { padding: 10px; }
       .card { padding: 12px; }
@@ -483,12 +427,12 @@
         <span class="value" id="dispIncome">0원</span>
       </div>
       <div class="stat">
-        <span class="label">남은 고정지출</span>
+        <span class="label">남은 고정지출 (미납)</span>
         <span class="value" id="dispExpense" style="color:#ef4444;">0원</span>
       </div>
     </div>
     <div class="remaining">
-      <div class="label" style="font-size:0.8rem; color:var(--subtext);">지출 차감 후 잔액</div>
+      <div class="label" style="font-size:0.8rem; color:var(--subtext);">지출 차감 후 최종 잔액</div>
       <div class="value" id="dispRemain">0원</div>
     </div>
     <div class="daily-budget" id="dispDaily">
@@ -513,7 +457,6 @@
       <button class="btn-reset" onclick="resetPaidStatus()">체크 전체해제</button>
     </div>
 
-    <!-- 입력 -->
     <div class="input-grid">
       <div class="input-row">
         <input type="number" id="itemDay" style="width:55px;" placeholder="일" min="1" max="31">
@@ -554,10 +497,7 @@
 
 </div>
 
-
-<!-- =======================================================
-     상세보기 모달 팝업
-     ======================================================= -->
+<!-- 상세보기 모달 -->
 <div class="modal-overlay" id="detailModal">
   <div class="modal-content">
     <div class="modal-header" id="modalTitle">항목 상세 정보</div>
@@ -583,10 +523,8 @@
   </div>
 </div>
 
-
 <script>
 
-  /* 데이터 초기화 */
   let data = JSON.parse(localStorage.getItem('monthly_budget_db')) || {
     income: 0,
     lastMonth: '',
@@ -596,7 +534,6 @@
   let editingId = null;
   let chart = null;
 
-  /* 월 변경 체크 */
   function checkMonthReset() {
     const currentMonth = new Date().toISOString().slice(0, 7);
     if (data.lastMonth !== currentMonth) {
@@ -606,17 +543,14 @@
     }
   }
 
-  /* 
-     1. 저장 및 다중 정렬 (1순위: 날짜, 2순위: 금액 큰순, 3순위: 이름)
-  */
   function save() {
     data.items.sort((a, b) => {
       const dayA = a.day || 0;
       const dayB = b.day || 0;
 
-      if (dayA !== dayB) return dayA - dayB; // 날짜 오름차순
-      if (b.amount !== a.amount) return b.amount - a.amount; // 금액 내림차순
-      return a.name.localeCompare(b.name, 'ko'); // 이름 가나다순
+      if (dayA !== dayB) return dayA - dayB;
+      if (b.amount !== a.amount) return b.amount - a.amount;
+      return a.name.localeCompare(b.name, 'ko');
     });
 
     localStorage.setItem('monthly_budget_db', JSON.stringify(data));
@@ -693,23 +627,17 @@
     }
   }
 
-  /* 
-     3. 삭제 시 확인 창(confirm) 추가
-  */
   function removeItem(id) {
     const item = data.items.find(i => i.id === id);
     const itemName = item ? item.name : '해당';
 
-    if (confirm(`'${itemName}' 항목을 действительно 삭제하시겠습니까?`)) {
+    if (confirm(`'${itemName}' 항목을 정말로 삭제하시겠습니까?`)) {
       data.items = data.items.filter(item => item.id !== id);
       if (editingId === id) editingId = null;
       save();
     }
   }
 
-  /* 
-     4. 상세보기 모달(팝업) 기능
-  */
   function openDetailModal(id) {
     const item = data.items.find(i => i.id === id);
     if (!item) return;
@@ -719,7 +647,6 @@
     document.getElementById('modalCat').innerText = item.category || '기타';
     document.getElementById('modalAmount').innerText = `${item.amount.toLocaleString()}원`;
     document.getElementById('modalPaid').innerText = item.paid ? '납부 완료' : '미납부';
-    
     document.getElementById('modalPaid').style.color = item.paid ? 'var(--subtext)' : 'var(--blue)';
 
     document.getElementById('detailModal').classList.add('active');
@@ -729,7 +656,6 @@
     document.getElementById('detailModal').classList.remove('active');
   }
 
-  /* 백업 및 복원 */
   function exportData() {
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data, null, 2));
     const downloadAnchor = document.createElement('a');
@@ -764,28 +690,33 @@
     reader.readAsText(file);
   }
 
-  /* 화면 렌더링 */
   function render() {
+    // 1. 전체 고정지출 합계
     const totalExpense = data.items.reduce((acc, cur) => acc + cur.amount, 0);
-    const pendingExpense = data.items.filter(i => !i.paid).reduce((acc, cur) => acc + cur.amount, 0);
-    const remaining = data.income - totalExpense;
 
+    // 2. 미납된 고정지출
+    const pendingExpense = data.items.filter(i => !i.paid).reduce((acc, cur) => acc + cur.amount, 0);
+
+    // 3. 지출 차감 후 최종 잔액 (수입 - 전체 고정지출)
+    const totalRemaining = data.income - totalExpense;
+
+    // 4. 이번 달 남은 날짜
     const now = new Date();
     const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
     const daysLeft = Math.max(1, lastDayOfMonth - now.getDate() + 1);
-    const dailyBudget = Math.max(0, Math.floor((data.income - pendingExpense) / daysLeft));
+
+    // 5. 정확한 하루 권장 생활비 = (지출 차감 후 최종 잔액) / 남은 일수
+    const dailyBudget = Math.max(0, Math.floor(totalRemaining / daysLeft));
 
     document.getElementById('dispIncome').innerText = data.income.toLocaleString() + '원';
     document.getElementById('dispExpense').innerText = pendingExpense.toLocaleString() + '원';
-    document.getElementById('dispRemain').innerText = remaining.toLocaleString() + '원';
+    document.getElementById('dispRemain').innerText = totalRemaining.toLocaleString() + '원';
     document.getElementById('dispDaily').innerHTML = 
       `이번 달 남은 <b>${daysLeft}일</b> 동안 하루 권장 생활비: <b>${dailyBudget.toLocaleString()}원</b>`;
 
     const listEl = document.getElementById('itemList');
 
     listEl.innerHTML = data.items.map(item => {
-
-      /* 수정 모드 */
       if (editingId === item.id) {
         return `
           <div class="expense-item" style="display:flex; flex-direction:column; align-items:stretch; gap:6px;">
@@ -812,7 +743,6 @@
         `;
       }
 
-      /* 2. 세분화된 카테고리 & 4. 팝업 연결(openDetailModal) */
       return `
         <div class="expense-item ${item.paid ? 'paid' : ''}">
           <div class="item-left">
@@ -832,7 +762,7 @@
       `;
     }).join('');
 
-    updateCategoryChart(remaining);
+    updateCategoryChart(totalRemaining);
   }
 
   function escapeHtml(value) {
@@ -844,9 +774,6 @@
       .replace(/'/g, '&#039;');
   }
 
-  /* 
-     2. 세분화된 카테고리 색상 맵 및 차트 갱신
-  */
   function updateCategoryChart(remaining) {
     const ctx = document.getElementById('expenseChart').getContext('2d');
     const categoryTotals = {};
@@ -893,6 +820,9 @@
 
     Chart.register(ChartDataLabels);
 
+    const isDarkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const textColor = isDarkMode ? '#f1f5f9' : '#0f172a';
+
     chart = new Chart(ctx, {
       type: 'doughnut',
       data: {
@@ -909,7 +839,7 @@
           legend: {
             position: 'bottom',
             labels: {
-              color: getComputedStyle(document.documentElement).getPropertyValue('--text'),
+              color: textColor,
               padding: 8,
               font: { size: 10 },
               generateLabels: function(chart) {
@@ -920,6 +850,7 @@
                   return {
                     text: `${label}: ${value.toLocaleString()}원 (${pct}%)`,
                     fillStyle: data.datasets[0].backgroundColor[i],
+                    fontColor: textColor,
                     hidden: isNaN(data.datasets[0].data[i]) || chart.getDatasetMeta(0).data[i].hidden,
                     index: i
                   };
@@ -941,12 +872,10 @@
     });
   }
 
-  /* Service Worker */
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js').catch(() => {});
   }
 
-  /* 실행 시작 */
   checkMonthReset();
   render();
 
