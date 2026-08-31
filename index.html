@@ -462,13 +462,17 @@
         <input type="number" id="itemDay" style="width:55px;" placeholder="일" min="1" max="31">
         <select id="itemCat" style="flex:1;">
           <option value="식비">식비</option>
-          <option value="주거/통신">주거/통신</option>
-          <option value="금융/대출">금융/대출</option>
-          <option value="보험/저축">보험/저축</option>
+          <option value="주거/생활">주거/생활</option>
+          <option value="통신">통신</option>
           <option value="교통/차량">교통/차량</option>
-          <option value="교육/육아">교육/육아</option>
           <option value="건강/의료">건강/의료</option>
-          <option value="문화/생활">문화/생활</option>
+          <option value="금융">금융</option>
+          <option value="보험">보험</option>
+          <option value="저축">저축</option>
+          <option value="교육">교육</option>
+          <option value="여가/취미">여가/취미</option>
+          <option value="쇼핑">쇼핑</option>
+          <option value="경조사/선물">경조사/선물</option>
           <option value="기타" selected>기타</option>
         </select>
       </div>
@@ -724,13 +728,17 @@
               <input type="number" id="edit-day-${item.id}" value="${item.day || 1}" style="width:50px;" min="1" max="31">
               <select id="edit-cat-${item.id}" style="flex:1;">
                 <option value="식비" ${item.category==='식비'?'selected':''}>식비</option>
-                <option value="주거/통신" ${item.category==='주거/통신'?'selected':''}>주거/통신</option>
-                <option value="금융/대출" ${item.category==='금융/대출'?'selected':''}>금융/대출</option>
-                <option value="보험/저축" ${item.category==='보험/저축'?'selected':''}>보험/저축</option>
+                <option value="주거/생활" ${item.category==='주거/생활'?'selected':''}>주거/생활</option>
+                <option value="통신" ${item.category==='통신'?'selected':''}>통신</option>
                 <option value="교통/차량" ${item.category==='교통/차량'?'selected':''}>교통/차량</option>
-                <option value="교육/육아" ${item.category==='교육/육아'?'selected':''}>교육/육아</option>
                 <option value="건강/의료" ${item.category==='건강/의료'?'selected':''}>건강/의료</option>
-                <option value="문화/생활" ${item.category==='문화/생활'?'selected':''}>문화/생활</option>
+                <option value="금융" ${item.category==='금융'?'selected':''}>금융</option>
+                <option value="보험" ${item.category==='보험'?'selected':''}>보험</option>
+                <option value="저축" ${item.category==='저축'?'selected':''}>저축</option>
+                <option value="교육" ${item.category==='교육'?'selected':''}>교육</option>
+                <option value="여가/취미" ${item.category==='여가/취미'?'selected':''}>여가/취미</option>
+                <option value="쇼핑" ${item.category==='쇼핑'?'selected':''}>쇼핑</option>
+                <option value="경조사/선물" ${item.category==='경조사/선물'?'selected':''}>경조사/선물</option>
                 <option value="기타" ${item.category==='기타'?'selected':''}>기타</option>
               </select>
             </div>
@@ -789,13 +797,17 @@
 
     const colorMap = {
       '식비': '#f59e0b',
-      '주거/통신': '#10b981',
-      '금융/대출': '#ef4444',
-      '보험/저축': '#06b6d4',
+      '주거/생활': '#10b981',
+      '통신': '#0284c7',
       '교통/차량': '#8b5cf6',
-      '교육/육아': '#ec4899',
       '건강/의료': '#84cc16',
-      '문화/생활': '#f97316',
+      '금융': '#ef4444',
+      '보험': '#06b6d4',
+      '저축': '#3b82f6',
+      '교육': '#ec4899',
+      '여가/취미': '#f97316',
+      '쇼핑': '#a855f7',
+      '경조사/선물': '#e11d48',
       '기타': '#64748b',
       '가용 잔액': '#2563eb'
     };
