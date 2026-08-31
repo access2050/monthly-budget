@@ -1,4 +1,4 @@
-const CACHE_NAME = 'monthly-budget-v20260825-1517';
+const CACHE_NAME = 'monthly-budget-v20260831-1907';
 
 const APP_FILES = [
   './',
