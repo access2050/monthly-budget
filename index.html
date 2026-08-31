@@ -12,7 +12,7 @@
 
   <title>월간 고정지출 대시보드</title>
 
-  <link rel="manifest" href="manifest.json">
+  <script type="text/javascript" nonce="ca62691fe5bd4eaca6fc531cba4" src="//local.adguard.org?ts=1788164659038&amp;type=content-script&amp;dmn=chatgpt.com&amp;url=https%3A%2F%2Fchatgpt.com%2Fbackend-api%2Festuary%2Fcontent%3Fid%3Dfile_000000001be08207a03cf0366dc0bf00%26fn%3D%25EC%259B%2594%25EA%25B0%2584_%25EA%25B3%25A0%25EC%25A0%2595%25EC%25A7%2580%25EC%25B6%259C_%25EA%25B4%2580%25EB%25A6%25AC_%25EC%25B9%25B4%25ED%2585%258C%25EA%25B0%2580%25EB%25A6%25AC_%25EA%25B0%259C%25ED%258E%25B8.html%26cd%3Dattachment%26ts%3D496713%26p%3Dfs%26cid%3D1%26sig%3D18ecab33b11f55f27e58a9501fa3d31087fd8ccde47044dff423e6ba55031ebc%26v%3D0&amp;app=chrome.exe&amp;css=2&amp;js=1&amp;rel=1&amp;rji=1&amp;sbe=1"></script><script type="text/javascript" nonce="ca62691fe5bd4eaca6fc531cba4" src="//local.adguard.org?ts=1788164659038&amp;name=AdGuard%20Extra&amp;name=AdGuard%20Popup%20Blocker&amp;type=user-script"></script><link rel="manifest" href="manifest.json">
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
@@ -185,6 +185,7 @@
       text-align: center;
       font-size: 0.8rem;
       color: var(--daily-text);
+      margin-bottom: 10px;
     }
 
     .daily-budget b {
@@ -194,6 +195,15 @@
 
     @media (prefers-color-scheme: dark) {
       .daily-budget b { color: #4ade80; }
+    }
+
+    .btn-chart-toggle {
+      width: 100%;
+      background-color: #8b5cf6;
+      color: #ffffff;
+      padding: 10px;
+      font-size: 0.85rem;
+      border-radius: 8px;
     }
 
     .input-grid {
@@ -340,7 +350,7 @@
     .btn-backup { background-color: #475569; width: 100%; }
     .btn-restore { background-color: #0284c7; width: 100%; }
 
-    .chart-container { position: relative; width: 100%; max-width: 300px; margin: 0 auto; }
+    .chart-container { position: relative; width: 100%; max-width: 320px; margin: 0 auto; }
 
     .modal-overlay {
       display: none;
@@ -350,7 +360,7 @@
       z-index: 1000;
       justify-content: center;
       align-items: center;
-      padding: 20px;
+      padding: 16px;
     }
 
     .modal-overlay.active { display: flex; }
@@ -360,7 +370,8 @@
       border: 1px solid var(--border);
       border-radius: 12px;
       width: 100%;
-      max-width: 360px;
+      max-width: 440px;
+      max-height: 85vh;
       padding: 18px;
       box-shadow: 0 4px 12px rgba(0,0,0,0.25);
       display: flex;
@@ -375,6 +386,7 @@
       border-bottom: 1px solid var(--line);
       padding-bottom: 8px;
       word-break: break-all;
+      flex-shrink: 0;
     }
 
     .modal-body {
@@ -383,6 +395,8 @@
       gap: 8px;
       font-size: 0.9rem;
       color: var(--text);
+      overflow-y: auto;
+      padding-right: 4px;
     }
 
     .modal-row { display: flex; justify-content: space-between; align-items: center; }
@@ -391,10 +405,11 @@
 
     .btn-close-modal {
       width: 100%;
-      margin-top: 8px;
+      margin-top: 4px;
       background-color: var(--blue);
       padding: 10px;
       font-size: 0.9rem;
+      flex-shrink: 0;
     }
 
     @media (max-width: 360px) {
@@ -438,16 +453,7 @@
     <div class="daily-budget" id="dispDaily">
       이번 달 남은 <b>0일</b> 동안 하루 권장 생활비: <b>0원</b>
     </div>
-  </div>
-
-  <!-- 카테고리 차트 -->
-  <div class="card">
-    <div class="card-title">
-      <h2>카테고리별 지출 구성</h2>
-    </div>
-    <div class="chart-container">
-      <canvas id="expenseChart"></canvas>
-    </div>
+    <button class="btn-chart-toggle" onclick="openChartModal()">카테고리별 지출 구성 보기</button>
   </div>
 
   <!-- 고정지출 관리 -->
@@ -460,21 +466,7 @@
     <div class="input-grid">
       <div class="input-row">
         <input type="number" id="itemDay" style="width:55px;" placeholder="일" min="1" max="31">
-        <select id="itemCat" style="flex:1;">
-          <option value="식비">식비</option>
-          <option value="주거/생활">주거/생활</option>
-          <option value="통신">통신</option>
-          <option value="교통/차량">교통/차량</option>
-          <option value="건강/의료">건강/의료</option>
-          <option value="금융">금융</option>
-          <option value="보험">보험</option>
-          <option value="저축">저축</option>
-          <option value="교육">교육</option>
-          <option value="여가/취미">여가/취미</option>
-          <option value="쇼핑">쇼핑</option>
-          <option value="경조사/선물">경조사/선물</option>
-          <option value="기타" selected>기타</option>
-        </select>
+        <select id="itemCat" style="flex:1;"></select>
       </div>
 
       <div class="input-row">
@@ -499,6 +491,19 @@
     <input type="file" id="fileInput" accept=".json" style="display:none;" onchange="importData(event)">
   </div>
 
+</div>
+
+<!-- 차트 모달 -->
+<div class="modal-overlay" id="chartModal">
+  <div class="modal-content">
+    <div class="modal-header">카테고리별 지출 구성</div>
+    <div class="modal-body">
+      <div class="chart-container">
+        <canvas id="expenseChart"></canvas>
+      </div>
+    </div>
+    <button class="btn-close-modal" onclick="closeChartModal()">닫기</button>
+  </div>
 </div>
 
 <!-- 상세보기 모달 -->
@@ -538,8 +543,82 @@
   let editingId = null;
   let chart = null;
 
+  const CATEGORIES = [
+    '식비',
+    '주거/생활',
+    '통신',
+    '교통/차량',
+    '건강/의료',
+    '금융',
+    '보험',
+    '저축',
+    '교육',
+    '여가/취미',
+    '쇼핑',
+    '경조사/선물',
+    '기타'
+  ];
+
+  const CATEGORY_COLORS = {
+    '식비': '#f59e0b',
+    '주거/생활': '#10b981',
+    '통신': '#06b6d4',
+    '교통/차량': '#8b5cf6',
+    '건강/의료': '#84cc16',
+    '금융': '#ef4444',
+    '보험': '#14b8a6',
+    '저축': '#0ea5e9',
+    '교육': '#ec4899',
+    '여가/취미': '#f97316',
+    '쇼핑': '#a855f7',
+    '경조사/선물': '#e11d48',
+    '기타': '#64748b',
+    '가용 잔액': '#2563eb'
+  };
+
+  function getCategoryOptions(selected = '') {
+    return CATEGORIES.map(cat =>
+      `<option value="${cat}" ${cat === selected ? 'selected' : ''}>${cat}</option>`
+    ).join('');
+  }
+
+  function normalizeCategories() {
+    const legacyMap = {
+      '주거/통신': '주거/생활',
+      '금융/대출': '금융',
+      '보험/저축': '보험',
+      '교육/육아': '교육',
+      '문화/생활': '여가/취미'
+    };
+
+    let changed = false;
+    data.items.forEach(item => {
+      if (legacyMap[item.category]) {
+        item.category = legacyMap[item.category];
+        changed = true;
+      }
+      if (!CATEGORIES.includes(item.category)) {
+        item.category = '기타';
+        changed = true;
+      }
+    });
+
+    if (changed) save();
+  }
+
+  function initCategorySelect() {
+    const select = document.getElementById('itemCat');
+    if (select) {
+      select.innerHTML = getCategoryOptions('기타');
+    }
+  }
+
   function checkMonthReset() {
-    const currentMonth = new Date().toISOString().slice(0, 7);
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const currentMonth = `${year}-${month}`;
+
     if (data.lastMonth !== currentMonth) {
       data.lastMonth = currentMonth;
       data.items.forEach(item => item.paid = false);
@@ -660,10 +739,26 @@
     document.getElementById('detailModal').classList.remove('active');
   }
 
+  function openChartModal() {
+    const totalExpense = data.items.reduce((acc, cur) => acc + cur.amount, 0);
+    const totalRemaining = data.income - totalExpense;
+    updateCategoryChart(totalRemaining);
+    document.getElementById('chartModal').classList.add('active');
+  }
+
+  function closeChartModal() {
+    document.getElementById('chartModal').classList.remove('active');
+  }
+
   function exportData() {
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data, null, 2));
     const downloadAnchor = document.createElement('a');
-    const today = new Date().toISOString().slice(0, 10);
+
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const today = `${year}-${month}-${day}`;
 
     downloadAnchor.setAttribute("href", dataStr);
     downloadAnchor.setAttribute("download", `budget_backup_${today}.json`);
@@ -695,21 +790,14 @@
   }
 
   function render() {
-    // 1. 전체 고정지출 합계
     const totalExpense = data.items.reduce((acc, cur) => acc + cur.amount, 0);
-
-    // 2. 미납된 고정지출
     const pendingExpense = data.items.filter(i => !i.paid).reduce((acc, cur) => acc + cur.amount, 0);
-
-    // 3. 지출 차감 후 최종 잔액 (수입 - 전체 고정지출)
     const totalRemaining = data.income - totalExpense;
 
-    // 4. 이번 달 남은 날짜
     const now = new Date();
     const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
     const daysLeft = Math.max(1, lastDayOfMonth - now.getDate() + 1);
 
-    // 5. 정확한 하루 권장 생활비 = (지출 차감 후 최종 잔액) / 남은 일수
     const dailyBudget = Math.max(0, Math.floor(totalRemaining / daysLeft));
 
     document.getElementById('dispIncome').innerText = data.income.toLocaleString() + '원';
@@ -727,19 +815,7 @@
             <div class="input-row">
               <input type="number" id="edit-day-${item.id}" value="${item.day || 1}" style="width:50px;" min="1" max="31">
               <select id="edit-cat-${item.id}" style="flex:1;">
-                <option value="식비" ${item.category==='식비'?'selected':''}>식비</option>
-                <option value="주거/생활" ${item.category==='주거/생활'?'selected':''}>주거/생활</option>
-                <option value="통신" ${item.category==='통신'?'selected':''}>통신</option>
-                <option value="교통/차량" ${item.category==='교통/차량'?'selected':''}>교통/차량</option>
-                <option value="건강/의료" ${item.category==='건강/의료'?'selected':''}>건강/의료</option>
-                <option value="금융" ${item.category==='금융'?'selected':''}>금융</option>
-                <option value="보험" ${item.category==='보험'?'selected':''}>보험</option>
-                <option value="저축" ${item.category==='저축'?'selected':''}>저축</option>
-                <option value="교육" ${item.category==='교육'?'selected':''}>교육</option>
-                <option value="여가/취미" ${item.category==='여가/취미'?'selected':''}>여가/취미</option>
-                <option value="쇼핑" ${item.category==='쇼핑'?'selected':''}>쇼핑</option>
-                <option value="경조사/선물" ${item.category==='경조사/선물'?'selected':''}>경조사/선물</option>
-                <option value="기타" ${item.category==='기타'?'selected':''}>기타</option>
+                ${getCategoryOptions(item.category || '기타')}
               </select>
             </div>
             <div class="input-row">
@@ -770,7 +846,9 @@
       `;
     }).join('');
 
-    updateCategoryChart(totalRemaining);
+    if (document.getElementById('chartModal').classList.contains('active')) {
+      updateCategoryChart(totalRemaining);
+    }
   }
 
   function escapeHtml(value) {
@@ -791,35 +869,24 @@
       categoryTotals[cat] = (categoryTotals[cat] || 0) + item.amount;
     });
 
+    // 지출 카테고리를 금액 내림차순으로 정렬
+    const sortedCategories = Object.entries(categoryTotals)
+      .filter(([_, sum]) => sum > 0)
+      .sort((a, b) => b[1] - a[1]);
+
     const labels = [];
     const chartData = [];
     const colors = [];
 
-    const colorMap = {
-      '식비': '#f59e0b',
-      '주거/생활': '#10b981',
-      '통신': '#0284c7',
-      '교통/차량': '#8b5cf6',
-      '건강/의료': '#84cc16',
-      '금융': '#ef4444',
-      '보험': '#06b6d4',
-      '저축': '#3b82f6',
-      '교육': '#ec4899',
-      '여가/취미': '#f97316',
-      '쇼핑': '#a855f7',
-      '경조사/선물': '#e11d48',
-      '기타': '#64748b',
-      '가용 잔액': '#2563eb'
-    };
+    const colorMap = CATEGORY_COLORS;
 
-    for (const [cat, sum] of Object.entries(categoryTotals)) {
-      if (sum > 0) {
-        labels.push(cat);
-        chartData.push(sum);
-        colors.push(colorMap[cat] || '#64748b');
-      }
+    for (const [cat, sum] of sortedCategories) {
+      labels.push(cat);
+      chartData.push(sum);
+      colors.push(colorMap[cat] || '#64748b');
     }
 
+    // 가용 잔액은 항상 맨 마지막
     if (remaining > 0) {
       labels.push('가용 잔액');
       chartData.push(remaining);
@@ -852,8 +919,8 @@
             position: 'bottom',
             labels: {
               color: textColor,
-              padding: 8,
-              font: { size: 10 },
+              padding: 6,
+              font: { size: 11 },
               generateLabels: function(chart) {
                 const data = chart.data;
                 return data.labels.map((label, i) => {
@@ -888,6 +955,8 @@
     navigator.serviceWorker.register('./sw.js').catch(() => {});
   }
 
+  initCategorySelect();
+  normalizeCategories();
   checkMonthReset();
   render();
 
